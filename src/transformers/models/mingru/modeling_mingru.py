@@ -199,7 +199,6 @@ class MinGRUPooler(nn.Module):
     def forward(self, hidden_states, mask, **kwargs):
         # Padding must be left side for `last`
         if self.config.pooling_type == "last":
-            mask = input_ids.not_equal(model.config.eos_token_id)
             mask = (mask.sum(1)-1).reshape(-1,1,1)
             pooled_tensor = torch.gather(
                 hidden_states, 
