@@ -203,7 +203,7 @@ class MinGRUPooler(nn.Module):
             pooled_tensor = torch.gather(
                 hidden_states, 
                 1, 
-                mask.expand(-1,-1, mask.size(-1))).squeeze(1)
+                mask.expand(-1,-1, hidden_states.size(-1))).squeeze(1)
         elif self.config.pooling_type == "mean":
             mask = mask.type(hidden_states.dtype).unsqueeze(-1)
             hidden_states = hidden_states * mask
