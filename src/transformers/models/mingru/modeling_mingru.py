@@ -205,11 +205,11 @@ class MinGRUPooler(nn.Module):
                 1, 
                 mask.expand(-1,-1, mask.size(-1))).squeeze(1)
         elif self.config.pooling_type == "mean":
-            mask = mask.dtype(hidden_states.dtype).unsqueeze(-1)
+            mask = mask.type(hidden_states.dtype).unsqueeze(-1)
             hidden_states = hidden_states * mask
             pooled_tensor = hidden_states.mean(dim=1)
         elif self.config.pooling_type == "max":
-            mask = mask.dtype(hidden_states.dtype).unsqueeze(-1)
+            mask = mask.type(hidden_states.dtype).unsqueeze(-1)
             hidden_states = hidden_states * mask
             pooled_tensor = hidden_states.max(dim=1).values
         else:
