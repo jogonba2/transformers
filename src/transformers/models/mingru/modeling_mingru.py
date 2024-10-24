@@ -196,13 +196,21 @@ class MinGRUPooler(nn.Module):
         self.dense = nn.Linear(self.config.hidden_size, self.config.hidden_size)
         self.activation = ACT2FN[self.config.pooling_activation]
 
-    def forward(self, hidden_states, **kwargs):
+    def forward(self, hidden_states, mask, **kwargs):
         # Padding must be left side for `last`
         if self.config.pooling_type == "last":
-            pooled_tensor = hidden_states[:, -1, :]
+            mask = (mask.sum(1)-1).reshape(-1,1,1)
+            pooled_tensor = torch.gather(
+                hidden_states, 
+                1, 
+                mask.expand(-1,-1, hidden_states.size(-1))).squeeze(1)
         elif self.config.pooling_type == "mean":
+            mask = mask.type(hidden_states.dtype).unsqueeze(-1)
+            hidden_states = hidden_states * mask
             pooled_tensor = hidden_states.mean(dim=1)
         elif self.config.pooling_type == "max":
+            mask = mask.type(hidden_states.dtype).unsqueeze(-1)
+            hidden_states = hidden_states * mask
             pooled_tensor = hidden_states.max(dim=1).values
         else:
             raise ValueError("Only `last`, `mean`, and `max` pool are allowed.")
@@ -302,7 +310,10 @@ class MinGRUModel(MinGRUPreTrainedModel):
             return_dict=return_dict,
         )
         sequence_output = encoder_outputs[0]
-        pooled_output = self.pooler(sequence_output) if self.pooler is not None else None
+
+        mask = input_ids.not_equal(self.config.eos_token_id) if self.pooler is not None else None
+
+        pooled_output = self.pooler(sequence_output, mask) if self.pooler is not None else None
 
         if not return_dict:
             return (sequence_output, pooled_output) + encoder_outputs[1:]
